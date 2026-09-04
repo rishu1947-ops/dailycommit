@@ -1,0 +1,80 @@
+name: Bishwa's Random Daily Commits
+
+on:
+  schedule:
+    # Check every 10 minutes
+    - cron: '7,17,27,37,47,57 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Random commit
+        shell: bash
+        run: |
+          FILE="commit_number.md"
+          TODAY=$(date -u +"%Y-%m-%d")
+
+          # Create the file if it doesn't exist
+          if [ ! -f "$FILE" ]; then
+            echo "Hello, my name is bishwa shah" > "$FILE"
+            echo "date: $TODAY" >> "$FILE"
+            echo "commit number: 1" >> "$FILE"
+
+            git config user.name "beesou777"
+            git config user.email "sbeesou@gmail.com"
+
+            git add "$FILE"
+            git commit -m "Hello, my name is bishwa shah nice to meet you"
+            git push
+            exit 0
+          fi
+
+          # Get today's commit count from the file
+          LAST_DATE=$(grep -oP 'date: \K.*' "$FILE" || true)
+          CURRENT_COUNT=$(grep -oP 'commit number: \K\d+' "$FILE" || true)
+
+          # Reset count when a new day starts
+          if [ "$LAST_DATE" != "$TODAY" ]; then
+            CURRENT_COUNT=0
+            echo "date: $TODAY" > "$FILE"
+            echo "commit number: 0" >> "$FILE"
+          fi
+
+          # Stop after 3 commits today
+          if [ "$CURRENT_COUNT" -ge 3 ]; then
+            echo "Already made 3 commits today."
+            exit 0
+          fi
+
+          # Random number from 1-100
+          RANDOM_NUMBER=$((RANDOM % 100 + 1))
+
+          # About 20% chance of making a commit on each check
+          if [ "$RANDOM_NUMBER" -gt 20 ]; then
+            echo "No commit this time."
+            exit 0
+          fi
+
+          # Make the commit
+          NEXT_COUNT=$((CURRENT_COUNT + 1))
+
+          sed -i "s/^commit number:.*/commit number: $NEXT_COUNT/" "$FILE"
+
+          git config user.name "beesou777"
+          git config user.email "sbeesou@gmail.com"
+
+          git add "$FILE"
+          git commit -m "Hello, my name is bishwa shah nice to meet you"
+          git push
